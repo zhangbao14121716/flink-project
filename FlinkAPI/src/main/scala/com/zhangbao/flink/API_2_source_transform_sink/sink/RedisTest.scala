@@ -10,7 +10,8 @@ import org.apache.flink.streaming.connectors.redis.common.mapper.{RedisCommand, 
  * @Author: Zhangbao
  * @Date: 23:44 2020/8/31
  * @Description:
- *
+ * Redis的连接器使用
+ * 需要自定义RedisMapper实现命令
  */
 object RedisTest {
   def main(args: Array[String]): Unit = {

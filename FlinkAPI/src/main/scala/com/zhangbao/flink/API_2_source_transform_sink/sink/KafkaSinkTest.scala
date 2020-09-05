@@ -11,7 +11,8 @@ import org.apache.flink.streaming.connectors.kafka.{FlinkKafkaConsumer011, Flink
  * @Author: Zhangbao
  * @Date: 0:31 2020/9/5
  * @Description:
- *
+ *  1.kafka消费数据获得数据流
+ *  2.kafka生产者将获得的数据流再写入kafka
  */
 object KafkaSinkTest {
   def main(args: Array[String]): Unit = {
