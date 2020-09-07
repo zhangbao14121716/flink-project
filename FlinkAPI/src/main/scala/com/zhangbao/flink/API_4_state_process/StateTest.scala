@@ -1,4 +1,4 @@
-package com.zhangbao.flink.day04
+package com.zhangbao.flink.API_4_state_process
 
 import com.zhangbao.flink.API_2_source_transform_sink.SensorReading
 import org.apache.flink.api.common.functions.RichFlatMapFunction

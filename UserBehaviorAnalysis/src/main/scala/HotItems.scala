@@ -6,6 +6,6 @@
  */
 object HotItems {
   def main(args: Array[String]): Unit = {
-    println("student")
+
   }
 }
