@@ -6,7 +6,15 @@
 
     <groupId>com.zhangbao.flink</groupId>
     <artifactId>UserBehaviorAnalysis</artifactId>
+    <packaging>pom</packaging>
     <version>1.0-SNAPSHOT</version>
+    <modules>
+        <module>HotItemAnalysis</module>
+        <module>NetworkFlowAnalysis</module>
+        <module>MarketAnalysis</module>
+        <module>LoginFailedDetect</module>
+        <module>OerderRealTime</module>
+    </modules>
 
     <properties>
         <flink.version>1.10.1</flink.version>
