@@ -3,6 +3,7 @@ package com.zhangbao
 import java.net.URL
 
 import org.apache.flink.api.common.functions.{AggregateFunction, MapFunction}
+import org.apache.flink.api.common.state.{ValueState, ValueStateDescriptor}
 import org.apache.flink.streaming.api.TimeCharacteristic
 import org.apache.flink.streaming.api.functions.KeyedProcessFunction
 import org.apache.flink.streaming.api.scala._
@@ -17,11 +18,10 @@ import scala.util.Random
  * @Author: Zhangbao
  * @Date: 7:17 2020/9/9
  * @Description:
- * 需求：统计浏览页面总人数
+ * 需求：统计浏览页面总人数：为防止数据倾斜，将数据打散重新给定key，进行count统计
  */
 // 定义输入输出样例类
 case class UserBehavior(userId: Long, itemId: Long, categoryId: Int, behavior: String, timestamp: Long)
-
 case class PvCount(windowEnd: Long, count: Long)
 
 object PageView {
@@ -62,38 +62,52 @@ object PageView {
   }
 }
 
-//
+//自定义map实现自定义map
 class MyMapper() extends MapFunction[UserBehavior, (String, Long)] {
-  //
+  //重写map方法
   override def map(value: UserBehavior): (String, Long) = {
-    //
+    //为每条数据重新分配随机key，（key，1L）
     (Random.nextString(10), 1L)
   }
 }
-//
+//窗口预聚合函数
 class PvCountAgg() extends AggregateFunction[(String, Long), Long, Long] {
-  //
+  //创建初始化累加器
   override def createAccumulator(): Long = 0L
-  //
+  //窗口每来一条数据，查找对应key累加数据
   override def add(value: (String, Long), accumulator: Long): Long = accumulator + 1
-  //
+  //返回值
   override def getResult(accumulator: Long): Long = accumulator
-  //
+  //累加器聚合
   override def merge(a: Long, b: Long): Long = a + b
 }
 
-//
+//全窗口函数输出样例类
 class PvCountResult() extends WindowFunction[Long,PvCount,String,TimeWindow]{
-  //
+  //实现apply方法
   override def apply(key: String, window: TimeWindow, input: Iterable[Long], out: Collector[PvCount]): Unit = {
-    //
+    //收集窗口聚合结果
     out.collect(PvCount(window.getEnd, input.head))
   }
 }
-//状态编程
+//状态编程，
 class TotalPvCountResult() extends KeyedProcessFunction[Long, PvCount, String]{
-  //
+  //当前窗口聚合值状态
+  lazy private val currentTotalCountState: ValueState[Long] = getRuntimeContext.getState(new ValueStateDescriptor[Long]("last-count-current-window", classOf[Long]))
+  //实现processElement方法
   override def processElement(value: PvCount, ctx: KeyedProcessFunction[Long, PvCount, String]#Context, out: Collector[String]): Unit = {
-
+    //获取总的聚合值
+    val currentTotalCount: Long = currentTotalCountState.value()
+    //状态叠加
+    currentTotalCountState.update(currentTotalCount + value.count)
+    //窗口结束定时器
+    ctx.timerService().registerEventTimeTimer(value.windowEnd + 100)
+  }
+  //定时器触发
+  override def onTimer(timestamp: Long, ctx: KeyedProcessFunction[Long, PvCount, String]#OnTimerContext, out: Collector[String]): Unit = {
+    //定时器触发时的操作
+    out.collect(s"WidowEnd--> $timestamp, ${currentTotalCountState.value()}")
+    //状态清空
+    currentTotalCountState.clear()
   }
 }

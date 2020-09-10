@@ -1,8 +1,10 @@
 package com.zhangbao.hot_items
 
 import java.net.URL
+import java.util.Properties
 
 import org.apache.flink.api.common.functions.AggregateFunction
+import org.apache.flink.api.common.serialization.SimpleStringSchema
 import org.apache.flink.api.common.state.{ListState, ListStateDescriptor}
 import org.apache.flink.api.java.tuple.{Tuple, Tuple1}
 import org.apache.flink.streaming.api.TimeCharacteristic
@@ -11,6 +13,7 @@ import org.apache.flink.streaming.api.scala._
 import org.apache.flink.streaming.api.scala.function.WindowFunction
 import org.apache.flink.streaming.api.windowing.time.Time
 import org.apache.flink.streaming.api.windowing.windows.TimeWindow
+import org.apache.flink.streaming.connectors.kafka.FlinkKafkaConsumer
 import org.apache.flink.util.Collector
 
 /**
@@ -50,6 +53,29 @@ object HotItems {
       UserBehavior(arr(0).trim.toLong, arr(1).trim.toLong, arr(2).trim.toInt, arr(3).trim, arr(4).trim.toLong)
     }).assignAscendingTimestamps(_.timestamp * 1000L)
     //
+
+    //---------------------------------------------------------------
+/*    //kafka作为数据源
+    val properties: Properties = new Properties()
+    properties.setProperty("bootstrap.servers", "localhost:9092")
+    properties.setProperty("group.id", "consumer-group")
+    properties.setProperty("key.deserializer", "org.apache.kafka.common.serialization.StringDeserializer")
+    properties.setProperty("value.deserializer", "org.apache.kafka.common.serialization.StringDeserializer")
+    properties.setProperty("auto.offset.reset", "latest")
+
+    val inputStream: DataStream[String] = environment.addSource(new FlinkKafkaConsumer[String]("hotitems", new SimpleStringSchema(), properties))
+    val dataStream: DataStream[UserBehavior] = inputStream
+      .map( line => {
+        val arr: Array[String] = line.split(",")
+        UserBehavior( arr(0).toLong, arr(1).toLong, arr(2).toInt, arr(3), arr(4).toLong )
+      } )
+      .assignAscendingTimestamps( _.timestamp * 1000L )*/
+    //---------------------------------------------------------------
+
+
+
+
+
     //dataStream.print("data")
     //过滤、分组、开窗、聚合
     val aggDataStream: DataStream[ItemCountResult] = dataStream
